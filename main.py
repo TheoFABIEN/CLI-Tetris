@@ -26,6 +26,7 @@ class Grid:
     def __init__(self, width = 10, height = 20, speed = .5):
 
         self.game_over = False
+        self.fall_speed_mult = 1
         self.width = width
         self.height = height
         self.speed = speed
@@ -85,8 +86,9 @@ class Grid:
         """
         if not self.current_shape:
             return
+
         new_position = (
-            self.current_shape_location[0] + 1, # Adding 1 row
+            self.current_shape_location[0] + self.fall_speed_mult, # Adding 1 row
             self.current_shape_location[1]
         )
         if self.can_move(self.current_shape, new_position):
@@ -103,7 +105,26 @@ class Grid:
                 self.current_shape_location[1],
             )
         else:
-            self.lock_shape()
+            new_position = (
+                self.current_shape_location[0] + 1, # Adding 1 row
+                self.current_shape_location[1]
+            )
+            if self.can_move(self.current_shape, new_position):
+                self.draw_shape(
+                    self.current_shape,
+                    self.current_shape_location[0],
+                    self.current_shape_location[1],
+                    value = 0          # Erasing the previous position
+                )
+                self.current_shape_location = new_position
+                self.draw_shape(
+                    self.current_shape, 
+                    self.current_shape_location[0],
+                    self.current_shape_location[1],
+                )
+
+            else:
+                self.lock_shape()
 
 
     def move_side(self, side = 1):
@@ -221,8 +242,10 @@ def main():
             grid.move_side(side = 1)
         if keyboard.is_pressed('k'):
             grid.rotate()
-        #if keyboard.read_key() == 'j'
-        #if keyboard.read_key() == 'k'
+        if keyboard.is_pressed('j'):
+            grid.fall_speed_mult = 2
+        else:
+            grid.fall_speed_mult = 1
 
         grid.print()
         grid.move_down()
