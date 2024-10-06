@@ -1,8 +1,8 @@
 import keyboard
-import os
 import time
 import numpy as np
 import random
+import curses
 from tetris_objects import l_shape, j_shape, t_shape, \
         o_shape, i_shape, s_shape, z_shape
 
@@ -12,7 +12,7 @@ G_WIDTH = 10
 G_HEIGHT = 20
 
 # Initial speed
-INIT_SPEED = .1
+INIT_SPEED = .05
 
 SHAPES_LIST = [
     l_shape, j_shape,
@@ -102,7 +102,7 @@ class Grid:
             self.current_shape_location[1]
         )
 
-        if self.frame_counter % 8 == 0:    # number of frames per down move
+        if self.frame_counter % 16 == 0:    # number of frames per down move
 
             if self.can_move(self.current_shape, new_position):
                 self.draw_shape(
@@ -242,29 +242,41 @@ class Grid:
         self.new_shape(new_shape)
 
 
-    def print(self):
+    def print(self, stdscr):
         """
         Print the grid for each iteration
         """
-        os.system('cls' if os.name == "nt" else "clear")
-        print("+" + "-"*self.width + "+")
-        for row in self.grid_list:
-            print("|" + ''.join(["." if x == 0 else "#" for x in row]) + "|")
-        print("+" + "-"*self.width + f"+    Your score: {self.score}", end='\r')
+        stdscr.clear()
+        for y, row in enumerate(self.grid_list):
+            for x, cell in enumerate(row):
+                char = " . " if cell == 0 else " # "
+                stdscr.addstr(y, x * 2, char)  # Doubling x for better spacing
+        stdscr.addstr(self.height - 1, self.width*2 + 2, f"Your score: {self.score}")
+        #for row in self.grid_list:
+        #    stdsrc.addstr("|" + ''.join(["." if x == 0 else "#" for x in row]) + "|")
+        #stdsrc.addstr("+" + "-"*self.width + f"+    Your score: {self.score}", end='\r')
+        stdscr.refresh()
+
+        #os.system('cls' if os.name == "nt" else "clear")
+        #print("+" + "-"*self.width + "+")
+        #for row in self.grid_list:
+        #    print("|" + ''.join(["." if x == 0 else "#" for x in row]) + "|")
+        #print("+" + "-"*self.width + f"+    Your score: {self.score}", end='\r')
 
 
 
-def main():
+def main(stdscr):
     grid = Grid(G_WIDTH, G_HEIGHT, INIT_SPEED)
     grid.new_shape(random.choice(SHAPES_LIST))
 
     last_action_time = 0
     freeze_time = .1       # minimum time between actions
 
-    while True:
+    curses.curs_set(0)  # Hide cursor
 
-        if grid.game_over:
-            break
+    while not grid.game_over:
+
+        grid.print(stdscr)
 
         current_time = time.time()
 
@@ -282,9 +294,10 @@ def main():
             grid.fall_speed_mult = 1
 
         grid.move_down()
-        grid.print()
         time.sleep(grid.speed)
 
 
-if __name__ == "__main__":
-    main()
+curses.wrapper(main)
+
+#if __name__ == "__main__":
+#    main()
