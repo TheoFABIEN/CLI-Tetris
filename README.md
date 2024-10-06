@@ -7,3 +7,7 @@ A basic Tetris version running in your command line interface. If you would like
 - l: move right
 - j: move down 2x faster
 - k: rotate
+
+### Dependancies (python packages)
+- keyboard
+- curses
