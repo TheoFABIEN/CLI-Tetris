@@ -38,9 +38,8 @@ class Grid:
             for _ in range(self.height)
         ]
         self.current_shape = None
+        self.next_shape = random.choice(SHAPES_LIST)
         self.current_shape_location = (0, 0) # row, column
-
-
 
 
     def update_cells(self, row, col, value = 1):
@@ -148,6 +147,30 @@ class Grid:
                 self.current_shape_location[1]
             )
 
+    def move_down_on_key(self):
+        """
+        Moves the object down when calling key
+        This adds to the natural movement, making the object move faster
+        """
+        if not self.current_shape:
+            return 
+        new_position = (
+            self.current_shape_location[0] + 1,
+            self.current_shape_location[1]
+        )
+        if self.can_move(self.current_shape, new_position):
+            self.draw_shape(
+                self.current_shape,
+                self.current_shape_location[0],
+                self.current_shape_location[1],
+                value = 0          # Erasing the previous position
+            )
+            self.current_shape_location = new_position
+            self.draw_shape(
+                self.current_shape, 
+                self.current_shape_location[0],
+                self.current_shape_location[1],
+            )
 
 
     def move_side(self, side = 1):
@@ -206,7 +229,6 @@ class Grid:
             self.width // 2 - len(shape[0]) // 2
         )
         if not self.can_move(self.current_shape, self.current_shape_location):
-            print("\nGame Over")
             self.game_over = True
             self.current_shape = None
 
@@ -238,30 +260,65 @@ class Grid:
         )
         self.row_is_complete()
         self.current_shape = None
-        new_shape = random.choice(SHAPES_LIST)
+        #new_shape = random.choice(SHAPES_LIST)
+        new_shape = self.next_shape
+        self.next_shape = random.choice(SHAPES_LIST)
         self.new_shape(new_shape)
 
 
     def print(self, stdscr):
         """
-        Print the grid for each iteration
+        Print the grid, score and next shape for each iteration
         """
         stdscr.clear()
         for y, row in enumerate(self.grid_list):
             for x, cell in enumerate(row):
                 char = " . " if cell == 0 else " # "
                 stdscr.addstr(y, x * 2, char)  # Doubling x for better spacing
-        stdscr.addstr(self.height - 1, self.width*2 + 2, f"Your score: {self.score}")
-        #for row in self.grid_list:
-        #    stdsrc.addstr("|" + ''.join(["." if x == 0 else "#" for x in row]) + "|")
-        #stdsrc.addstr("+" + "-"*self.width + f"+    Your score: {self.score}", end='\r')
+        # Printing next shape
+        for i, shape_row in enumerate(self.next_shape):
+            for j, value in enumerate(shape_row):
+                if value:
+                    stdscr.addstr(i + int(self.height*.7), self.width * 2 + 5 + j * 2, " # ")
+        #Printing score
+        stdscr.addstr(
+            self.height - 1, 
+            self.width*2 + 2, 
+            f"Your score: {self.score}"
+        )
         stdscr.refresh()
 
-        #os.system('cls' if os.name == "nt" else "clear")
-        #print("+" + "-"*self.width + "+")
-        #for row in self.grid_list:
-        #    print("|" + ''.join(["." if x == 0 else "#" for x in row]) + "|")
-        #print("+" + "-"*self.width + f"+    Your score: {self.score}", end='\r')
+    def print_game_over(self, stdscr):
+        """
+        Game over screen
+        """
+        stdscr.clear()
+        game_over_msg = "GAME OVER"
+        retry_msg = "Retry (r)"
+        quit_msg = "Quit (q)"
+        stdscr.addstr(
+            self.height // 2,
+            self.width - len(game_over_msg) // 2,
+            game_over_msg,
+            curses.A_BOLD
+        )
+        stdscr.addstr(
+            self.height // 2 + 2,
+            self.width - len(retry_msg) // 2,
+            retry_msg 
+        )
+        stdscr.addstr(
+            self.height // 2 + 3,
+            self.width - len(quit_msg) // 2,
+            quit_msg 
+        )
+        stdscr.refresh()
+        while True:
+            if keyboard.is_pressed("q"):
+                return "q"
+            elif keyboard.is_pressed("r"):
+                return "r"
+
 
 
 
@@ -270,7 +327,7 @@ def main(stdscr):
     grid.new_shape(random.choice(SHAPES_LIST))
 
     last_action_time = 0
-    freeze_time = .1       # minimum time between actions
+    freeze_time = .12       # minimum time between actions
 
     curses.curs_set(0)  # Hide cursor
 
@@ -288,16 +345,24 @@ def main(stdscr):
             if current_time - last_action_time > freeze_time:
                 grid.rotate()
                 last_action_time = current_time
+        #if keyboard.is_pressed('j'):
+        #    grid.fall_speed_mult = 2
+        #else:
+        #    grid.fall_speed_mult = 1
         if keyboard.is_pressed('j'):
-            grid.fall_speed_mult = 2
-        else:
-            grid.fall_speed_mult = 1
+            grid.move_down_on_key()
 
         grid.move_down()
         time.sleep(grid.speed)
 
 
-curses.wrapper(main)
+    choice = grid.print_game_over(stdscr)
 
-#if __name__ == "__main__":
-#    main()
+    if choice == 'r':
+        main(stdscr)
+    elif choice == 'q':
+        time.sleep(1)
+
+
+
+curses.wrapper(main)
