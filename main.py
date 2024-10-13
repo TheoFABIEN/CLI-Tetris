@@ -1,3 +1,4 @@
+import os
 import keyboard
 import time
 import numpy as np
@@ -21,14 +22,43 @@ SHAPES_LIST = [
 ]
 
 
+
 class Grid:
 
-    def __init__(self, width = 10, height = 20, speed = .5):
+    """
+    Class representing the Tetris game grid.
 
-        self.game_over = False   
+    Attributes:
+        game_over (bool): Indicates whether the game is over.
+        score (int): The current score of the game.
+        points_granted (list): Points granted for 1/2/3/4 lines combinations.
+        fall_speed_mult (int): Multiplier for object falling speed.
+        frame_counter (int): Counter to manage frame-based timing for 
+                             falling pieces.
+        width (int): Width of the grid.
+        height (int): Height of the grid.
+        speed (float): Speed of the game (affects how fast pieces fall).
+        grid_list (list): A 2D list representing the current state of the grid.
+        current_shape (list): The current shape being manipulated by the player.
+        next_shape (list): The next shape to appear.
+        current_shape_location (tuple): Coordinates of the current shape
+                                        (row, column).
+    """
+
+
+    def __init__(self, width = 10, height = 20, speed = .5):
+        """
+        Initialization of the gri object.
+
+        Args:
+            with (int): width of the grid.
+            height (int): height of the grid.
+            speed (float): initial speed of the falling shapes.
+        """
+        self.game_over = False
         self.score = 0
-        self.points_granted = [40, 100, 300, 1200]  # Points for 1/2/3/4 lines
-        self.fall_speed_mult = 1    
+        self.points_granted = [40, 100, 300, 1200]
+        self.fall_speed_mult = 1
         self.frame_counter = 0
         self.width = width
         self.height = height
@@ -39,12 +69,18 @@ class Grid:
         ]
         self.current_shape = None
         self.next_shape = random.choice(SHAPES_LIST)
-        self.current_shape_location = (0, 0) # row, column
+        self.current_shape_location = (0, 0)
 
 
     def update_cells(self, row, col, value = 1):
         """
-        Updates cells value in self.grid_list
+        Updates the value of a specific cell in the grid.
+
+        Args:
+            row (int): Row index of the cell.
+            col (int): Column index of the cell.
+            value (int): The new value to set in the cell
+                         (0 for empty, 1 for active shape, 2 for locked shape).
         """
         if self.width > col >= 0 and self.height > row >= 0:
             self.grid_list[row][col] = value
@@ -52,7 +88,14 @@ class Grid:
 
     def draw_shape(self, shape, row, col, value = 1):
         """
-        Draws a shape at a given location on the grid
+        Draws a shape at a given location on the grid.
+
+        Args:
+            shape (list): 2D list representing the shape.
+            row (int): Row index to start drawing the shape.
+            col (int): Column index to start drawing the shape.
+            value (int): Value to assign to the grid cells 
+                         (1 for active shape, 0 for clearing the shape).
         """
         shape_coords = [
             (i + row, j + col)
@@ -66,10 +109,17 @@ class Grid:
                 value = value
             )
 
-    
+
     def can_move(self, shape, new_pos):
         """
-        Checks if a shape can be moved to a given position.
+        Checks if a shape can be moved to a given position without collisions.
+
+        Args:
+            shape (list): 2D list representing the shape.
+            new_pos (tuple): The new row and column position (row, col).
+        
+        Returns:
+            bool: True if the shape can move, False otherwise.
         """
         new_row, new_col = new_pos 
         shape_coords = [
@@ -97,7 +147,7 @@ class Grid:
             return
 
         new_position = (
-            self.current_shape_location[0] + self.fall_speed_mult, # Adding 1 row
+            self.current_shape_location[0] + self.fall_speed_mult,
             self.current_shape_location[1]
         )
 
@@ -149,8 +199,8 @@ class Grid:
 
     def move_down_on_key(self):
         """
-        Moves the object down when calling key
-        This adds to the natural movement, making the object move faster
+        Moves the object down when calling key.
+        This adds to the natural movement, making the object move faster.
         """
         if not self.current_shape:
             return 
@@ -175,7 +225,11 @@ class Grid:
 
     def move_side(self, side = 1):
         """
-        Moves the current shape to the right (side=1) or to the left (side=-1)
+        Moves the current shape to the right (side=1) or to the left (side=-1).
+
+        Args:
+            side (int): Direction to move the shape.
+                        Use 1 for right, -1 for left.
         """
         if not self.current_shape:
             return 
@@ -198,10 +252,9 @@ class Grid:
             )
 
 
-
     def rotate(self):
         """
-        Rotates the current shape
+        Rotates the current shape by 90 degrees if enough space.
         """
         if not self.current_shape:
             return
@@ -221,8 +274,13 @@ class Grid:
             )
 
 
-
     def new_shape(self, shape):
+        """
+        Introduces a new shape at the top of the grid.
+
+        Args:
+            shape (list): The new shape to introduce.
+        """
         self.current_shape = shape
         self.current_shape_location = (
             0,
@@ -235,7 +293,8 @@ class Grid:
 
     def row_is_complete(self):
         """
-        Checks for completed rows after locking the current object
+        Checks for completed rows and clears them, updating the score
+        and increasing speed.
         """
         num_completed = 0
         for i, row in enumerate(self.grid_list):
@@ -250,7 +309,8 @@ class Grid:
 
     def lock_shape(self):
         """
-        If the shape cannot move, it is locked in the grid
+        If the shape cannot move, locks it in place and checks
+        for full rows.
         """
         self.draw_shape(
             self.current_shape,
@@ -268,7 +328,11 @@ class Grid:
 
     def print(self, stdscr):
         """
-        Print the grid, score and next shape for each iteration
+        Prints the grid, score and next shape for each iteration.
+
+        Args:
+            stdscr (curses.window): The window object provided by the curses
+                                    library.
         """
         stdscr.clear()
         for y, row in enumerate(self.grid_list):
@@ -279,7 +343,11 @@ class Grid:
         for i, shape_row in enumerate(self.next_shape):
             for j, value in enumerate(shape_row):
                 if value:
-                    stdscr.addstr(i + int(self.height*.7), self.width * 2 + 5 + j * 2, " # ")
+                    stdscr.addstr(
+                        i + int(self.height*.7), 
+                        self.width * 2 + 5 + j * 2, 
+                        " # "
+                    )
         #Printing score
         stdscr.addstr(
             self.height - 1, 
@@ -288,9 +356,14 @@ class Grid:
         )
         stdscr.refresh()
 
+
     def print_game_over(self, stdscr):
         """
-        Game over screen
+        Displays a game over screen.
+
+        Args:
+            stdscr (curses.window): The window object provided by the curses
+                                    library.
         """
         stdscr.clear()
         game_over_msg = "GAME OVER"
@@ -323,6 +396,13 @@ class Grid:
 
 
 def main(stdscr):
+    """
+    The main game loop controlling the flow of the game.
+
+    Args:
+        stdscr (curses.window): The window object provided by the curses
+                                library.
+    """
     grid = Grid(G_WIDTH, G_HEIGHT, INIT_SPEED)
     grid.new_shape(random.choice(SHAPES_LIST))
 
@@ -364,5 +444,5 @@ def main(stdscr):
         time.sleep(1)
 
 
-
+# Execution of the main function inside terminal using the curses wrapper.
 curses.wrapper(main)
