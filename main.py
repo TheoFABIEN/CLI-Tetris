@@ -1,4 +1,3 @@
-import os
 import keyboard
 import time
 import numpy as np
@@ -12,7 +11,7 @@ from tetris_objects import l_shape, j_shape, t_shape, \
 G_WIDTH = 10
 G_HEIGHT = 20
 
-# Initial speed
+# Initial time between frames
 INIT_SPEED = .05
 
 SHAPES_LIST = [
@@ -367,8 +366,9 @@ class Grid:
         """
         stdscr.clear()
         game_over_msg = "GAME OVER"
-        retry_msg = "Retry (r)"
-        quit_msg = "Quit (q)"
+        actions_msg = "Retry (r)    Quit (q)"
+        #quit_msg = "Quit (q)"
+        final_score_msg = f"Final score: {self.score}"
         stdscr.addstr(
             self.height // 2,
             self.width - len(game_over_msg) // 2,
@@ -377,14 +377,17 @@ class Grid:
         )
         stdscr.addstr(
             self.height // 2 + 2,
-            self.width - len(retry_msg) // 2,
-            retry_msg 
+            self.width - len(final_score_msg) // 2,
+            final_score_msg,
+            curses.A_BOLD
         )
         stdscr.addstr(
-            self.height // 2 + 3,
-            self.width - len(quit_msg) // 2,
-            quit_msg 
+            self.height // 2 + 7,
+            self.width - len(actions_msg) // 2,
+            actions_msg,
+            curses.A_BOLD
         )
+
         stdscr.refresh()
         while True:
             if keyboard.is_pressed("q"):
@@ -406,8 +409,11 @@ def main(stdscr):
     grid = Grid(G_WIDTH, G_HEIGHT, INIT_SPEED)
     grid.new_shape(random.choice(SHAPES_LIST))
 
-    last_action_time = 0
-    freeze_time = .12       # minimum time between actions
+    last_k_time = 0
+    last_h_time = 0
+    last_l_time = 0
+    freeze_time_rotation = .12   # minimum time between rotation actions
+    freeze_time_side_mov = .05    # minimum time between side movement actions
 
     curses.curs_set(0)  # Hide cursor
 
@@ -418,13 +424,19 @@ def main(stdscr):
         current_time = time.time()
 
         if keyboard.is_pressed('h'):
-            grid.move_side(side = -1)
+            #grid.move_side(side = -1)
+            if current_time - last_h_time > freeze_time_side_mov:
+                grid.move_side(side = -1)
+                last_h_time = current_time
         if keyboard.is_pressed('l'):
-            grid.move_side(side = 1)
+            #grid.move_side(side = 1)
+            if current_time - last_l_time > freeze_time_side_mov:
+                grid.move_side(side = 1)
+                last_l_time = current_time
         if keyboard.is_pressed('k'):
-            if current_time - last_action_time > freeze_time:
+            if current_time - last_k_time > freeze_time_rotation:
                 grid.rotate()
-                last_action_time = current_time
+                last_k_time = current_time
         #if keyboard.is_pressed('j'):
         #    grid.fall_speed_mult = 2
         #else:
